@@ -119,16 +119,20 @@ function createPairCard(pair) {
 function formatTextWithLinks(text) {
     if (!text) return "Нет ДЗ";
     
-    // 1. Защита HTML и замена переносов строк
     let html = text.replace(/\n/g, "<br>");
-
-    // 2. Ищем ссылки (http://... или https://...)
-    // Регулярное выражение ищет протокол и все символы до пробела
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     
-    // 3. Заменяем найденные ссылки на тег <a>
     return html.replace(urlRegex, (url) => {
-        return `<a href="${url}" target="_blank" style="color: #00d2ff; text-decoration: underline; word-break: break-all;">${url}</a>`;
+        // Проверяем, это ссылка на телеграм или нет?
+        const isTelegram = url.includes('t.me') || url.includes('telegram.me');
+
+        if (isTelegram) {
+            // Если Телеграм - убираем target="_blank", чтобы телефон переключил приложение
+            return `<a href="${url}" style="color: #00d2ff; text-decoration: underline; word-break: break-all;">${url}</a>`;
+        } else {
+            // Если обычный сайт - открываем в новой вкладке
+            return `<a href="${url}" target="_blank" style="color: #00d2ff; text-decoration: underline; word-break: break-all;">${url}</a>`;
+        }
     });
 }
 
@@ -319,3 +323,4 @@ document.getElementById('admin-login-btn').addEventListener('click', async () =>
         }
     }
 });
+
