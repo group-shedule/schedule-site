@@ -94,7 +94,7 @@ function createPairCard(pair) {
         ${deleteBtn}
         <div class="time-col">
             <span class="pair-time" style="font-size:1.1rem; color:#00d2ff;">${pair.time_start}</span>
-            <span style="font-size:0.8rem; color:#aaa; display:block;">do ${pair.time_end}</span>
+            <span style="font-size:0.8rem; color:#aaa; display:block;">до ${pair.time_end}</span>
         </div>
         <div class="subject-col">
             ${subjectHTML}
@@ -272,3 +272,4 @@ document.getElementById('admin-login-btn').addEventListener('click', async () =>
     }
 
 });
+
