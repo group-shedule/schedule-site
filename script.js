@@ -1,4 +1,4 @@
-const API_URL = 'https://schedule-backend-iv0o.onrender.com'; 
+const API_URL = 'https://schedule-backend-iv0o.onrender.com/api'; 
 
 const datePicker = document.getElementById('date-picker');
 const humanDateText = document.getElementById('human-date');
@@ -270,4 +270,5 @@ document.getElementById('admin-login-btn').addEventListener('click', async () =>
         if(d.success) { localStorage.setItem('isAdmin','true'); location.reload(); }
         else alert('Error');
     }
+
 });
