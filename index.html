@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Расписание группы</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Уведомление -->
+    <div id="loader" class="server-toast">
+        <div class="spinner-small"></div>
+        <span>Связь с базой данных...</span>
+    </div>
+
+    <header>
+        <h1>Расписание</h1>
+        
+        <!-- БЛОК ВЫБОРА ДАТЫ -->
+        <div class="date-controls">
+            <button onclick="changeDate(-1)">❮</button>
+            <input type="date" id="date-picker">
+            <button onclick="changeDate(1)">❯</button>
+        </div>
+        <p id="human-date" class="current-date">...</p>
+        
+        <!-- КНОПКА ДОБАВИТЬ ПАРУ (Только для админа) -->
+        <button id="add-pair-btn" class="hidden btn-add-pair" onclick="openAddModal()">+ Добавить пару</button>
+    </header>
+
+    <main>
+        <div class="table-container">
+            <div id="schedule-list">
+                <!-- Сюда JS вставит пары -->
+            </div>
+            <p id="empty-msg" style="text-align:center; color:#777; margin-top:20px; display:none;">
+                На этот день пар нет (или это выходной).
+            </p>
+        </div>
+    </main>
+
+    <!-- МОДАЛКА: ПРОСМОТР / ДЗ -->
+    <div id="modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h2 id="modal-title">Заголовок</h2>
+            
+            <div id="modal-body"></div>
+
+            <!-- Элементы галереи (скрыты по умолчанию) -->
+            <div id="gallery-controls" class="hidden">
+                <div class="gallery-view">
+                    <button class="nav-btn prev" onclick="prevSlide()">❮</button>
+                    <img id="gallery-img" src="" alt="Лекция">
+                    <button class="nav-btn next" onclick="nextSlide()">❯</button>
+                </div>
+                <div class="gallery-counter">Стр <span id="current-page">1</span> из <span id="total-pages">1</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА: ДОБАВЛЕНИЕ ПАРЫ (Новая) -->
+    <div id="add-modal" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width: 400px;">
+            <span class="close-btn" onclick="closeAddModal()">&times;</span>
+            <h2>Новая пара</h2>
+            <form id="add-form" onsubmit="submitNewPair(event)">
+                <div class="input-group">
+                    <label>Время начала:</label>
+                    <input type="time" id="new-start" required>
+                </div>
+                <div class="input-group">
+                    <label>Время конца:</label>
+                    <input type="time" id="new-end" required>
+                </div>
+                <div class="input-group">
+                    <label>Предмет:</label>
+                    <input type="text" id="new-subject" placeholder="Например: Математика" required>
+                </div>
+                <div class="input-group">
+                    <label>Преподаватель:</label>
+                    <input type="text" id="new-teacher" placeholder="Фамилия И.О.">
+                </div>
+                <button type="submit" class="btn-hw" style="width:100%; margin-top:10px;">Создать</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Кнопка админа -->
+    <button id="admin-login-btn" class="admin-floating-btn">⚙️</button>
+
+    <script src="script.js"></script>
+</body>
+</html>
