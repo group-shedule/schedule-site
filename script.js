@@ -1,10 +1,15 @@
-const API_URL = 'https://schedule-backend-iv0o.onrender.com/api'; 
+// Вставь сюда свою ссылку на рендер (с /api на конце!)
+const API_URL = 'https://schedule-backend-iv0o.onrender.com/api';
 
 const datePicker = document.getElementById('date-picker');
 const humanDateText = document.getElementById('human-date');
 const scheduleList = document.getElementById('schedule-list');
 const emptyMsg = document.getElementById('empty-msg');
 const loader = document.getElementById('loader');
+
+// Глобальная переменная для хранения текущего расписания
+// Это нужно, чтобы брать ДЗ и Фото из памяти, а не передавать через HTML (что вызывало ошибку)
+let currentScheduleData = [];
 
 // Галерея
 let currentLectureFiles = [];
@@ -36,7 +41,7 @@ function changeDate(days) {
 
 // ЗАГРУЗКА РАСПИСАНИЯ
 async function loadSchedule(date) {
-    // Красивая дата текстом (Среда, 25 октября)
+    // Красивая дата текстом
     const dateObj = new Date(date);
     const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
     humanDateText.innerText = dateObj.toLocaleDateString('ru-RU', options);
@@ -44,6 +49,9 @@ async function loadSchedule(date) {
     try {
         const res = await fetch(`${API_URL}/schedule?date=${date}`);
         const data = await res.json();
+        
+        // СОХРАНЯЕМ ДАННЫЕ В ГЛОБАЛЬНУЮ ПЕРЕМЕННУЮ
+        currentScheduleData = data;
         
         loader.classList.add('hidden');
         scheduleList.innerHTML = '';
@@ -58,7 +66,7 @@ async function loadSchedule(date) {
         }
     } catch (e) {
         console.error(e);
-        alert('Ошибка связи с сервером');
+        // Не пугаем ошибкой, если просто нет связи, loader останется висеть или можно скрыть
     }
 }
 
@@ -66,11 +74,11 @@ async function loadSchedule(date) {
 function createPairCard(pair) {
     const div = document.createElement('div');
     div.className = 'schedule-row';
-    div.style.position = 'relative'; // Для позиционирования крестика
+    div.style.position = 'relative'; 
 
     const isAdmin = localStorage.getItem('isAdmin') === 'true';
 
-    // Крестик удаления (Только для админа)
+    // Крестик удаления
     const deleteBtn = isAdmin 
         ? `<button class="delete-pair-btn" onclick="deletePair('${pair.id}')">×</button>` 
         : '';
@@ -90,6 +98,8 @@ function createPairCard(pair) {
            </label>`
         : '';
 
+    // ИСПРАВЛЕНИЕ: Мы передаем в onclick ТОЛЬКО ID ('${pair.id}').
+    // Текст ДЗ и ссылки на фото мы найдем внутри функции через currentScheduleData.
     div.innerHTML = `
         ${deleteBtn}
         <div class="time-col">
@@ -102,8 +112,8 @@ function createPairCard(pair) {
             ${uploadBtn}
         </div>
         <div class="actions-col">
-            <button class="btn-hw" onclick="openHomework('${pair.id}', '${pair.homework || ''}')">ДЗ</button>
-            <button class="btn-le" onclick='openGallery(${JSON.stringify(pair.lectureFiles || [])})'>Лекция (${(pair.lectureFiles || []).length})</button>
+            <button class="btn-hw" onclick="openHomework('${pair.id}')">ДЗ</button>
+            <button class="btn-le" onclick="openGallery('${pair.id}')">Лекция (${(pair.lectureFiles || []).length})</button>
         </div>
     `;
     return div;
@@ -133,13 +143,12 @@ async function submitNewPair(e) {
             body: JSON.stringify({ date, time_start: start, time_end: end, subject, teacher })
         });
         closeAddModal();
-        loadSchedule(date); // Перезагружаем список
+        loadSchedule(date); 
     } catch(e) { alert('Ошибка создания'); }
 }
 
 async function deletePair(id) {
     if(!confirm('Точно удалить пару? Все фото лекций тоже сотрутся!')) return;
-    
     try {
         await fetch(`${API_URL}/delete-pair`, {
             method: 'POST',
@@ -152,7 +161,13 @@ async function deletePair(id) {
 
 // --- ГАЛЕРЕЯ (СЛАЙДЕР) ---
 
-function openGallery(files) {
+// ИСПРАВЛЕНО: Принимаем ID, ищем файлы в памяти
+function openGallery(id) {
+    // Находим пару в памяти по ID
+    const pair = currentScheduleData.find(p => p.id === id);
+    if (!pair) return;
+
+    const files = pair.lectureFiles || [];
     currentLectureFiles = files;
     currentImageIndex = 0;
     
@@ -162,7 +177,7 @@ function openGallery(files) {
     const modal = document.getElementById('modal');
 
     modalTitle.innerText = "Материалы лекции";
-    modalBody.innerHTML = ''; // Очищаем текст ДЗ
+    modalBody.innerHTML = ''; 
 
     if (files.length === 0) {
         modalBody.innerText = "Фотографий пока нет.";
@@ -180,7 +195,7 @@ function updateGalleryImage() {
     const pageNum = document.getElementById('current-page');
     const totalNum = document.getElementById('total-pages');
     
-    img.src = currentLectureFiles[currentImageIndex].url; // Берем URL из объекта
+    img.src = currentLectureFiles[currentImageIndex].url; 
     pageNum.innerText = currentImageIndex + 1;
     totalNum.innerText = currentLectureFiles.length;
 }
@@ -198,22 +213,31 @@ function prevSlide() {
     }
 }
 
-// --- СТАРЫЕ ФУНКЦИИ (ДЗ, АДМИН, ЗАГРУЗКА ФОТО) ---
+// --- ДЗ, АДМИН, ЗАГРУЗКА ФОТО ---
+
 function closeModal() { document.getElementById('modal').classList.add('hidden'); }
 
-function openHomework(id, text) {
+// ИСПРАВЛЕНО: Принимаем только ID
+function openHomework(id) {
+    // Находим пару в памяти по ID
+    const pair = currentScheduleData.find(p => p.id === id);
+    if (!pair) return;
+
+    const text = pair.homework;
+
     document.getElementById('modal-title').innerText = "Домашнее задание";
-    document.getElementById('gallery-controls').classList.add('hidden'); // Скрываем галерею
+    document.getElementById('gallery-controls').classList.add('hidden'); 
     const modalBody = document.getElementById('modal-body');
     const isAdmin = localStorage.getItem('isAdmin') === 'true';
     
     if (isAdmin) {
         modalBody.innerHTML = `
-            <textarea id="hw-edit-area" style="width:100%; height:150px; background:#333; color:#fff; padding:10px;">${text}</textarea>
-            <button onclick="saveHomework('${id}')" style="margin-top:10px; background:green;">Сохранить</button>
+            <textarea id="hw-edit-area" style="width:100%; height:150px; background:#333; color:#fff; padding:10px; border:1px solid #555;">${text || ''}</textarea>
+            <button onclick="saveHomework('${id}')" style="margin-top:10px; background:green; color:white; padding:10px; border:none; cursor:pointer;">Сохранить</button>
         `;
     } else {
-        modalBody.innerText = text || "Нет ДЗ";
+        // Заменяем переносы строк на <br>, чтобы текст был красивым
+        modalBody.innerHTML = (text || "Нет ДЗ").replace(/\n/g, "<br>");
     }
     document.getElementById('modal').classList.remove('hidden');
 }
@@ -225,6 +249,7 @@ async function saveHomework(id) {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({id, homework: text})
     });
+    alert('ДЗ сохранено!');
     closeModal();
     loadSchedule(datePicker.value);
 }
@@ -242,34 +267,45 @@ async function uploadPhotos(id, files) {
     formData.append('id', id);
     for(let f of files) formData.append('photos', f);
     
-    alert('Загрузка фото...');
+    alert('Загрузка фото... Подождите.');
     await fetch(`${API_URL}/upload-lecture`, { method: 'POST', body: formData });
-    alert('Готово!');
+    alert('Фото успешно загружены!');
     loadSchedule(datePicker.value);
 }
 
 function checkAdminMode() {
     if(localStorage.getItem('isAdmin') === 'true') {
-        document.getElementById('admin-login-btn').style.background = 'red';
-        document.getElementById('admin-login-btn').style.opacity = '1';
-        document.getElementById('add-pair-btn').classList.remove('hidden'); // Показываем кнопку "Добавить пару"
+        const btn = document.getElementById('admin-login-btn');
+        btn.style.background = '#dc3545';
+        btn.style.opacity = '1';
+        document.getElementById('add-pair-btn').classList.remove('hidden'); 
     }
 }
 
 document.getElementById('admin-login-btn').addEventListener('click', async () => {
     if (localStorage.getItem('isAdmin') === 'true') {
-        if(confirm('Выйти?')) { localStorage.removeItem('isAdmin'); location.reload(); }
+        if(confirm('Выйти из режима админа?')) { localStorage.removeItem('isAdmin'); location.reload(); }
     } else {
-        const l = prompt('Log'); const p = prompt('Pass');
-        const res = await fetch(`${API_URL}/login`, {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({login:l, password:p})
-        });
-        const d = await res.json();
-        if(d.success) { localStorage.setItem('isAdmin','true'); location.reload(); }
-        else alert('Error');
+        const l = prompt('Логин:'); 
+        const p = prompt('Пароль:');
+        
+        if (!l || !p) return;
+
+        try {
+            const res = await fetch(`${API_URL}/login`, {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({login:l, password:p})
+            });
+            const d = await res.json();
+            if(d.success) { 
+                localStorage.setItem('isAdmin','true'); 
+                location.reload(); 
+            } else {
+                alert('Неверный логин или пароль');
+            }
+        } catch (e) {
+            alert('Ошибка сервера при входе');
+        }
     }
-
 });
-
