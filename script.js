@@ -1,4 +1,4 @@
-// Вставь сюда свою ссылку на рендер (с /api на конце!)
+// Ссылка на твой сервер
 const API_URL = 'https://schedule-backend-iv0o.onrender.com/api';
 
 const datePicker = document.getElementById('date-picker');
@@ -8,7 +8,6 @@ const emptyMsg = document.getElementById('empty-msg');
 const loader = document.getElementById('loader');
 
 // Глобальная переменная для хранения текущего расписания
-// Это нужно, чтобы брать ДЗ и Фото из памяти, а не передавать через HTML (что вызывало ошибку)
 let currentScheduleData = [];
 
 // Галерея
@@ -50,7 +49,7 @@ async function loadSchedule(date) {
         const res = await fetch(`${API_URL}/schedule?date=${date}`);
         const data = await res.json();
         
-        // СОХРАНЯЕМ ДАННЫЕ В ГЛОБАЛЬНУЮ ПЕРЕМЕННУЮ
+        // СОХРАНЯЕМ ДАННЫЕ В ПАМЯТЬ
         currentScheduleData = data;
         
         loader.classList.add('hidden');
@@ -66,7 +65,6 @@ async function loadSchedule(date) {
         }
     } catch (e) {
         console.error(e);
-        // Не пугаем ошибкой, если просто нет связи, loader останется висеть или можно скрыть
     }
 }
 
@@ -98,8 +96,6 @@ function createPairCard(pair) {
            </label>`
         : '';
 
-    // ИСПРАВЛЕНИЕ: Мы передаем в onclick ТОЛЬКО ID ('${pair.id}').
-    // Текст ДЗ и ссылки на фото мы найдем внутри функции через currentScheduleData.
     div.innerHTML = `
         ${deleteBtn}
         <div class="time-col">
@@ -117,6 +113,23 @@ function createPairCard(pair) {
         </div>
     `;
     return div;
+}
+
+// --- НОВАЯ ФУНКЦИЯ: ПРЕВРАЩАЕМ ТЕКСТ В КЛИКАБЕЛЬНЫЕ ССЫЛКИ ---
+function formatTextWithLinks(text) {
+    if (!text) return "Нет ДЗ";
+    
+    // 1. Защита HTML и замена переносов строк
+    let html = text.replace(/\n/g, "<br>");
+
+    // 2. Ищем ссылки (http://... или https://...)
+    // Регулярное выражение ищет протокол и все символы до пробела
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    
+    // 3. Заменяем найденные ссылки на тег <a>
+    return html.replace(urlRegex, (url) => {
+        return `<a href="${url}" target="_blank" style="color: #00d2ff; text-decoration: underline; word-break: break-all;">${url}</a>`;
+    });
 }
 
 // --- ЛОГИКА ДОБАВЛЕНИЯ/УДАЛЕНИЯ ---
@@ -161,9 +174,7 @@ async function deletePair(id) {
 
 // --- ГАЛЕРЕЯ (СЛАЙДЕР) ---
 
-// ИСПРАВЛЕНО: Принимаем ID, ищем файлы в памяти
 function openGallery(id) {
-    // Находим пару в памяти по ID
     const pair = currentScheduleData.find(p => p.id === id);
     if (!pair) return;
 
@@ -217,9 +228,7 @@ function prevSlide() {
 
 function closeModal() { document.getElementById('modal').classList.add('hidden'); }
 
-// ИСПРАВЛЕНО: Принимаем только ID
 function openHomework(id) {
-    // Находим пару в памяти по ID
     const pair = currentScheduleData.find(p => p.id === id);
     if (!pair) return;
 
@@ -234,10 +243,11 @@ function openHomework(id) {
         modalBody.innerHTML = `
             <textarea id="hw-edit-area" style="width:100%; height:150px; background:#333; color:#fff; padding:10px; border:1px solid #555;">${text || ''}</textarea>
             <button onclick="saveHomework('${id}')" style="margin-top:10px; background:green; color:white; padding:10px; border:none; cursor:pointer;">Сохранить</button>
+            <p style="font-size:0.8rem; color:#aaa; margin-top:5px;">💡 Ссылки (http/https) станут кликабельными при просмотре.</p>
         `;
     } else {
-        // Заменяем переносы строк на <br>, чтобы текст был красивым
-        modalBody.innerHTML = (text || "Нет ДЗ").replace(/\n/g, "<br>");
+        // ИСПОЛЬЗУЕМ НОВУЮ ФУНКЦИЮ ДЛЯ ССЫЛОК
+        modalBody.innerHTML = formatTextWithLinks(text);
     }
     document.getElementById('modal').classList.remove('hidden');
 }
