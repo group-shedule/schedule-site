@@ -16,7 +16,7 @@ let currentImageIndex = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Устанавливаем дату "Сегодня"
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('en-CA');
     datePicker.value = today;
     
     // 2. Грузим расписание
@@ -323,4 +323,5 @@ document.getElementById('admin-login-btn').addEventListener('click', async () =>
         }
     }
 });
+
 
