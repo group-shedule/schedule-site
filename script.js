@@ -15,7 +15,7 @@ let currentImageIndex = 0;
 let changesLog = [];
 
 document.addEventListener('DOMContentLoaded', () => {
-    const today = new Date().toISOString().split('T')[0];
+     const today = new Date().toLocaleDateString('en-CA');
     datePicker.value = today;
     loadSchedule(today);
     checkAdminMode();
@@ -355,4 +355,5 @@ document.getElementById('admin-login-btn').addEventListener('click', async () =>
         }
     }
 });
+
 
