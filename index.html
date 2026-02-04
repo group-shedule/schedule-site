@@ -4,7 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Расписание группы</title>
+    
+    <!-- FAVICON (Иконка сайта) -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    
     <link rel="stylesheet" href="style.css">
+
+    <!-- Подключение OneSignal (Уведомления) -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(function(OneSignal) {
+        OneSignal.init({
+          appId: "b4a0253c-5239-4270-834e-1479ecbdcfe8",
+        });
+      });
+    </script>
 </head>
 <body>
 
@@ -17,7 +32,7 @@
     <header>
         <h1>Расписание</h1>
         
-        <!-- БЛОК ВЫБОРА ДАТЫ -->
+        <!-- Календарь -->
         <div class="date-controls">
             <button onclick="changeDate(-1)">❮</button>
             <input type="date" id="date-picker">
@@ -25,14 +40,17 @@
         </div>
         <p id="human-date" class="current-date">...</p>
         
-        <!-- КНОПКА ДОБАВИТЬ ПАРУ (Только для админа) -->
-        <button id="add-pair-btn" class="hidden btn-add-pair" onclick="openAddModal()">+ Добавить пару</button>
+        <!-- ПАНЕЛЬ АДМИНА (Скрыта по умолчанию) -->
+        <div class="admin-controls hidden" id="admin-panel-header">
+            <button id="add-pair-btn" class="btn-add-pair" onclick="openAddModal()">+ Добавить пару</button>
+            <button id="notify-btn" class="btn-notify" onclick="sendNotification()">📢 Уведомить (0)</button>
+        </div>
     </header>
 
     <main>
         <div class="table-container">
             <div id="schedule-list">
-                <!-- Сюда JS вставит пары -->
+                <!-- Сюда вставляются пары -->
             </div>
             <p id="empty-msg" style="text-align:center; color:#777; margin-top:20px; display:none;">
                 На этот день пар нет (или это выходной).
@@ -40,15 +58,15 @@
         </div>
     </main>
 
-    <!-- МОДАЛКА: ПРОСМОТР / ДЗ -->
+    <!-- Модалка: Просмотр -->
     <div id="modal" class="modal-overlay hidden">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">&times;</span>
             <h2 id="modal-title">Заголовок</h2>
             
-            <div id="modal-body"></div>
+            <div id="modal-body" style="margin-bottom: 15px; line-height: 1.5;"></div>
 
-            <!-- Элементы галереи (скрыты по умолчанию) -->
+            <!-- Галерея -->
             <div id="gallery-controls" class="hidden">
                 <div class="gallery-view">
                     <button class="nav-btn prev" onclick="prevSlide()">❮</button>
@@ -60,11 +78,11 @@
         </div>
     </div>
 
-    <!-- МОДАЛКА: ДОБАВЛЕНИЕ ПАРЫ (Новая) -->
+    <!-- Модалка: Добавление -->
     <div id="add-modal" class="modal-overlay hidden">
         <div class="modal-content" style="max-width: 400px;">
             <span class="close-btn" onclick="closeAddModal()">&times;</span>
-            <h2>Новая пара</h2>
+            <h2 style="margin-bottom: 15px;">Новая пара</h2>
             <form id="add-form" onsubmit="submitNewPair(event)">
                 <div class="input-group">
                     <label>Время начала:</label>
@@ -82,16 +100,14 @@
                     <label>Преподаватель:</label>
                     <input type="text" id="new-teacher" placeholder="Фамилия И.О.">
                 </div>
-                <button type="submit" class="btn-hw" style="width:100%; margin-top:10px;">Создать</button>
+                <button type="submit" class="btn-add-pair" style="width:100%; border-radius: 10px;">Создать</button>
             </form>
         </div>
     </div>
 
-    <!-- Кнопка админа -->
-    <button id="admin-login-btn" class="admin-floating-btn">⚙️</button>
+    <!-- Шестеренка -->
+    <button id="admin-login-btn" class="admin-floating-btn" title="Админка">⚙️</button>
 
-    <script src="script.js?v=335"></script>
+    <script src="script.js?v=777"></script>
 </body>
-
 </html>
-
