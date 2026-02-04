@@ -10,15 +10,39 @@
     
     <link rel="stylesheet" href="style.css">
 
-    <!-- Подключение OneSignal (Уведомления) -->
+        <!-- Подключение OneSignal (Уведомления) -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(function(OneSignal) {
-          OneSignal.Debug.setLogLevel("trace");
         OneSignal.init({
-          appId: "b4a0253c-5239-4270-834e-1479ecbdcfe8",
+          appId: "b4a0253c-5239-4270-834e-1479ecbdcfe8", // <-- ТВОИ ЦИФРЫ
+          
+          // ВКЛЮЧАЕМ КОЛОКОЛЬЧИК (Самый надежный способ)
+          notifyButton: {
+            enable: true, 
+            showCredit: false,
+            text: {
+                'tip.state.unsubscribed': 'Подпишись на уведомления!',
+                'tip.state.subscribed': 'Вы подписаны на обновления',
+                'tip.state.blocked': 'Вы заблокировали уведомления',
+                'message.action.subscribed': "Спасибо за подписку!",
+                'message.action.resubscribed': "Вы снова подписаны",
+                'message.action.unsubscribed': "Вы отписались",
+                'dialog.main.title': 'Настройки уведомлений',
+                'dialog.main.button.subscribe': 'ПОДПИСАТЬСЯ',
+                'dialog.main.button.unsubscribe': 'ОТПИСАТЬСЯ',
+                'dialog.blocked.title': 'Разблокировать уведомления',
+                'dialog.blocked.message': 'Следуйте инструкциям, чтобы разрешить уведомления'
+            }
+          },
+          
+          // Разрешаем работу на локалке (на всякий случай)
+          allowLocalhostAsSecureOrigin: true,
         });
+        
+        // НАСИЛЬНО ВЫЗЫВАЕМ ОКНО ПОДПИСКИ ПРИ ЗАГРУЗКЕ
+        OneSignal.Slidedown.promptPush();
       });
     </script>
 </head>
@@ -112,5 +136,6 @@
     <script src="script.js?v=888"></script>
 </body>
 </html>
+
 
 
