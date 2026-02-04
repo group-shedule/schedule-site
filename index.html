@@ -15,6 +15,7 @@
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(function(OneSignal) {
+          OneSignal.Debug.setLogLevel("trace");
         OneSignal.init({
           appId: "b4a0253c-5239-4270-834e-1479ecbdcfe8",
         });
@@ -111,4 +112,5 @@
     <script src="script.js?v=888"></script>
 </body>
 </html>
+
 
