@@ -162,3 +162,4 @@ button:active { transform: scale(0.95); }
     .delete-pair-btn { right: -12px; top: -12px; background: #dc3545; color: white; }
     .admin-controls { flex-direction: row; justify-content: center; }
 }
+
