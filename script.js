@@ -280,9 +280,13 @@ function updateNotifyButton() {
     }
 }
 
+// Красивая дата: 04.02.2026
 function formatDate(isoDate) {
     const d = new Date(isoDate);
-    return `${d.getDate()}.${d.getMonth()+1}`;
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}.${month}.${year}`;
 }
 
 async function sendNotification() {
@@ -351,3 +355,4 @@ document.getElementById('admin-login-btn').addEventListener('click', async () =>
         }
     }
 });
+
