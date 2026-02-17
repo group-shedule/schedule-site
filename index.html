@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>12ЭПС | Расписание</title>
+    <title>12EPS | Расписание</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="style.css">
 
@@ -12,7 +12,7 @@
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(function(OneSignal) {
         OneSignal.init({
-          appId: "b4a0253c-5239-4270-834e-1479ecbdcfe8", // <-- ВСТАВЬ ID
+          appId: "b4a0253c-5239-4270-834e-1479ecbdcfe8", // <--- НЕ ЗАБУДЬ ID
           notifyButton: { enable: true, size: 'medium', theme: 'default', position: 'bottom-right' }
         });
       });
@@ -29,7 +29,7 @@
 
     <div class="app-container">
         <header>
-            <div class="logo">12ЭПС</div>
+            <div class="logo">12EPS</div>
             <div class="date-widget">
                 <button class="nav-arrow" onclick="changeDate(-1)">❮</button>
                 <div class="date-display">
@@ -45,17 +45,14 @@
             <!-- АДМИН ПАНЕЛЬ -->
             <div id="admin-panel" class="admin-panel hidden">
                 <div class="admin-header">Панель управления</div>
-                
-                <!-- Кнопки действий -->
                 <div class="admin-actions">
                     <button onclick="openAddModal()" class="btn-icon">➕ Пару</button>
                     <button id="notify-btn" onclick="sendNotification()" class="btn-icon alert">📢 Уведомить</button>
                 </div>
-
-                <!-- Управление шаблонами -->
                 <div class="template-controls">
                     <div class="template-row">
-                        <button onclick="saveCurrentDayAsTemplate()" class="btn-small">💾 Сохранить день как шаблон</button>
+                        <!-- КНОПКА СОХРАНЕНИЯ НЕДЕЛИ -->
+                        <button onclick="saveCurrentWeekAsTemplate()" class="btn-small">💾 Сохранить НЕДЕЛЮ как шаблон</button>
                         <button onclick="openTemplateModal()" class="btn-small">📂 Загрузить шаблон</button>
                     </div>
                 </div>
@@ -70,23 +67,19 @@
         </main>
     </div>
 
-    <!-- МОДАЛКА ПРОСМОТРА / ДЗ -->
+    <!-- МОДАЛКИ -->
     <div id="modal" class="modal-overlay hidden">
         <div class="modal-card">
             <div class="modal-header">
                 <h2 id="modal-title">Заголовок</h2>
                 <span class="close-btn" onclick="closeModal()">&times;</span>
             </div>
-            
             <div id="modal-body" class="modal-body"></div>
-
-            <!-- Галерея -->
             <div id="gallery-controls" class="gallery-container hidden">
                 <div class="gallery-viewer">
                     <button class="gallery-nav prev" onclick="prevSlide()">❮</button>
                     <div class="image-wrapper">
                         <img id="gallery-img" src="" alt="Лекция">
-                        <!-- Кнопки управления фото (Только для Админа) -->
                         <div id="photo-actions" class="photo-actions hidden">
                             <button onclick="rotateCurrentPhoto()" title="Повернуть">↻</button>
                             <button onclick="deleteCurrentPhoto()" title="Удалить" class="del">🗑️</button>
@@ -99,31 +92,19 @@
         </div>
     </div>
 
-    <!-- МОДАЛКА ВЫБОРА ШАБЛОНА -->
     <div id="template-modal" class="modal-overlay hidden">
         <div class="modal-card small">
-            <div class="modal-header">
-                <h2>Выберите шаблон</h2>
-                <span class="close-btn" onclick="closeTemplateModal()">&times;</span>
-            </div>
-            <div id="templates-list" class="templates-list">
-                <p>Загрузка...</p>
-            </div>
+            <div class="modal-header"><h2>Выберите шаблон</h2><span class="close-btn" onclick="closeTemplateModal()">&times;</span></div>
+            <div id="templates-list" class="templates-list"><p>Загрузка...</p></div>
         </div>
     </div>
 
-    <!-- МОДАЛКА ДОБАВЛЕНИЯ -->
     <div id="add-modal" class="modal-overlay hidden">
         <div class="modal-card small">
-            <div class="modal-header">
-                <h2>Новая пара</h2>
-                <span class="close-btn" onclick="closeAddModal()">&times;</span>
-            </div>
+            <div class="modal-header"><h2>Новая пара</h2><span class="close-btn" onclick="closeAddModal()">&times;</span></div>
             <form id="add-form" onsubmit="submitNewPair(event)" class="modern-form">
                 <div class="form-row">
-                    <input type="time" id="new-start" required>
-                    <span>—</span>
-                    <input type="time" id="new-end" required>
+                    <input type="time" id="new-start" required><span>—</span><input type="time" id="new-end" required>
                 </div>
                 <input type="text" id="new-subject" placeholder="Предмет" required>
                 <input type="text" id="new-teacher" placeholder="Преподаватель">
@@ -133,10 +114,6 @@
     </div>
 
     <button id="admin-login-btn" class="fab-settings">⚙️</button>
-
-    <script src="script.js?v=999"></script>
+    <script src="script.js?v=3333"></script>
 </body>
 </html>
-
-
-
