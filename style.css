@@ -1,165 +1,226 @@
-/* 1. ШРИФТЫ И БАЗА */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap');
 
-* { box-sizing: border-box; margin: 0; padding: 0; outline: none; }
+:root {
+    --bg-dark: #0f111a;
+    --card-bg: rgba(255, 255, 255, 0.04);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --primary: #4f46e5; /* Индиго */
+    --accent: #0ea5e9; /* Голубой */
+    --danger: #ef4444;
+    --text-main: #ffffff;
+    --text-muted: #94a3b8;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
 
 body {
-    font-family: 'Montserrat', sans-serif;
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg-dark);
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.15) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(14, 165, 233, 0.15) 0%, transparent 40%);
+    color: var(--text-main);
     min-height: 100vh;
-    padding-bottom: 80px;
     overflow-x: hidden;
 }
 
-/* 2. ПЛАШКА ЗАГРУЗКИ */
-.server-toast {
-    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-    background: rgba(255, 140, 0, 0.15); border: 1px solid rgba(255, 140, 0, 0.5);
-    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-    color: #ffd700; padding: 10px 20px; border-radius: 50px;
-    display: flex; align-items: center; gap: 15px; z-index: 9999;
-    width: 90%; max-width: 450px; font-size: 0.85rem; font-weight: 600;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: all 0.5s ease;
+/* ЗАГРУЗКА */
+.loader-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--bg-dark);
+    display: flex; justify-content: center; align-items: center; z-index: 2000;
+    transition: opacity 0.5s;
 }
-.server-toast.hidden { top: -100px; opacity: 0; }
-.spinner-small {
-    width: 18px; height: 18px; border: 2px solid rgba(255, 215, 0, 0.3);
-    border-top: 2px solid #ffd700; border-radius: 50%; animation: spin 1s linear infinite; flex-shrink: 0;
+.loader-overlay.hidden { opacity: 0; pointer-events: none; }
+.loader-content { text-align: center; color: var(--accent); }
+.spinner {
+    width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1);
+    border-top: 3px solid var(--accent); border-radius: 50%;
+    animation: spin 1s infinite linear; margin: 0 auto 10px;
 }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes spin { 100% { transform: rotate(360deg); } }
 
-/* 3. ШАПКА И КАЛЕНДАРЬ */
-header { text-align: center; padding: 30px 20px; }
-header h1 { font-size: 1.8rem; text-shadow: 0 0 10px rgba(0, 210, 255, 0.5); margin-bottom: 15px; }
+/* КОНТЕЙНЕР */
+.app-container { max-width: 600px; margin: 0 auto; padding: 20px; padding-bottom: 80px; }
 
-.date-controls {
-    display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 10px;
+/* ШАПКА */
+header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 30px;
 }
+.logo { font-weight: 700; font-size: 1.5rem; letter-spacing: -1px; background: linear-gradient(45deg, #fff, #94a3b8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+.date-widget {
+    display: flex; align-items: center; gap: 15px;
+    background: var(--card-bg); padding: 8px 15px; border-radius: 50px;
+    border: 1px solid var(--glass-border); backdrop-filter: blur(10px);
+}
+.date-display { text-align: center; position: relative; cursor: pointer; }
+#human-day { display: block; font-weight: 700; font-size: 0.9rem; line-height: 1; }
+#human-full-date { display: block; font-size: 0.7rem; color: var(--text-muted); }
 #date-picker {
-    background: rgba(255,255,255,0.1); border: 1px solid #555; color: white;
-    padding: 8px 15px; border-radius: 8px; font-family: 'Montserrat', sans-serif;
-    font-size: 1rem; color-scheme: dark; cursor: pointer;
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    opacity: 0; cursor: pointer;
 }
-.date-controls button {
-    width: 35px; height: 35px; border-radius: 50%; background: rgba(255,255,255,0.1);
-    color: #fff; border: 1px solid #444; cursor: pointer; transition: 0.3s;
-    display: flex; justify-content: center; align-items: center;
+.nav-arrow {
+    background: none; border: none; color: var(--text-main); font-size: 1.2rem; cursor: pointer;
+    transition: transform 0.2s;
 }
-.date-controls button:hover { background: #00d2ff; color: #000; }
+.nav-arrow:active { transform: scale(0.8); }
 
-.current-date { color: #a8a8b3; font-size: 0.9rem; margin-bottom: 20px; }
-
-/* Кнопки Админа */
-.admin-controls { display: flex; flex-direction: column; gap: 10px; align-items: center; }
-
-.btn-add-pair {
-    display: block; background: linear-gradient(45deg, #11998e, #38ef7d);
-    color: white; border: none; padding: 10px 20px; border-radius: 25px;
-    font-weight: bold; cursor: pointer; box-shadow: 0 5px 15px rgba(56, 239, 125, 0.3);
-    transition: transform 0.2s; min-width: 200px;
+/* АДМИН ПАНЕЛЬ */
+.admin-panel {
+    background: rgba(79, 70, 229, 0.1); border: 1px solid rgba(79, 70, 229, 0.3);
+    border-radius: 16px; padding: 15px; margin-bottom: 20px;
+    animation: slideDown 0.3s ease;
 }
-.btn-notify {
-    display: block; background: linear-gradient(45deg, #ff9966, #ff5e62);
-    color: white; border: none; padding: 10px 20px; border-radius: 25px;
-    font-weight: bold; cursor: pointer; box-shadow: 0 5px 15px rgba(255, 94, 98, 0.3);
-    transition: transform 0.2s; min-width: 200px;
+.admin-header { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 10px; font-weight: 700; }
+.admin-actions { display: flex; gap: 10px; }
+.btn-icon {
+    flex: 1; padding: 10px; border: none; border-radius: 10px;
+    font-weight: 600; cursor: pointer; background: var(--card-bg); color: #fff;
+    transition: 0.2s;
 }
-.btn-add-pair:hover, .btn-notify:hover { transform: scale(1.05); }
-.hidden { display: none !important; }
+.btn-icon:hover { background: rgba(255,255,255,0.1); }
+.btn-icon.alert { color: #facc15; }
 
-/* 4. ОСНОВНОЙ СПИСОК */
-.table-container { max-width: 800px; margin: 0 auto; padding: 0 15px; }
+/* ШАБЛОНЫ */
+.template-controls { margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
+.template-row { display: flex; gap: 10px; }
+.btn-small { 
+    background: rgba(255,255,255,0.1); border: none; color: #fff; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; flex: 1; 
+}
+.btn-small:hover { background: var(--primary); }
+
+.templates-list { display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto; }
+.template-item { 
+    background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; 
+}
+.template-item span { font-weight: 600; color: #fff; }
+.template-item button { padding: 5px 10px; font-size: 0.8rem; border-radius: 5px; border: none; cursor: pointer; }
+.btn-load { background: var(--accent); color: white; margin-right: 5px; }
+.btn-del-tmpl { background: var(--danger); color: white; }
+
+/* СПИСОК ПАР */
+.schedule-grid { display: flex; flex-direction: column; gap: 15px; }
 
 .schedule-row {
     position: relative;
-    background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 15px;
-    padding: 20px; margin-bottom: 15px;
-    display: flex; flex-direction: column; gap: 15px; transition: transform 0.2s;
+    background: var(--card-bg); border: 1px solid var(--glass-border);
+    border-radius: 20px; padding: 20px;
+    display: flex; flex-direction: column; gap: 15px;
+    backdrop-filter: blur(15px); transition: transform 0.2s, box-shadow 0.2s;
 }
-.schedule-row:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+.schedule-row:hover { transform: translateY(-2px); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); border-color: rgba(255,255,255,0.2); }
+
+/* Внутри карточки */
+.pair-meta { display: flex; justify-content: space-between; align-items: flex-start; }
+.time-badge {
+    background: rgba(14, 165, 233, 0.1); color: var(--accent);
+    padding: 5px 10px; border-radius: 8px; font-weight: 700; font-size: 0.9rem;
+}
+.duration { font-size: 0.75rem; color: var(--text-muted); margin-left: 5px; }
 
 .delete-pair-btn {
-    position: absolute; top: 10px; right: 10px;
-    background: rgba(220, 53, 69, 0.2); color: #ff6b6b;
-    width: 25px; height: 25px; border-radius: 50%; border: none;
-    cursor: pointer; font-size: 1.2rem; line-height: 1;
-    display: flex; justify-content: center; align-items: center; transition: 0.3s;
+    width: 24px; height: 24px; border-radius: 50%; background: rgba(239, 68, 68, 0.2);
+    color: var(--danger); border: none; font-weight: bold; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
 }
-.delete-pair-btn:hover { background: #dc3545; color: white; }
 
-.time-col .pair-time { font-size: 1.2rem; font-weight: bold; color: #00d2ff; }
-.subject-col strong { font-size: 1.1rem; display: block; margin-bottom: 5px; }
-.subject-col .teacher { font-size: 0.85rem; color: #bbb; font-style: italic; }
+.pair-content h3 { font-size: 1.2rem; margin-bottom: 4px; color: #fff; }
+.teacher { color: var(--text-muted); font-size: 0.9rem; font-style: italic; }
 
-.actions-col { display: flex; gap: 10px; }
-button.btn-hw, button.btn-le {
-    flex: 1; padding: 12px; border: none; border-radius: 8px;
-    font-family: 'Montserrat', sans-serif; font-weight: 600; color: white; cursor: pointer;
+.upload-label {
+    display: inline-block; margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);
+    border: 1px dashed var(--glass-border); padding: 5px 10px; border-radius: 8px; cursor: pointer;
 }
-.btn-hw { background: linear-gradient(45deg, #da22ff, #9733ee); }
-.btn-le { background: linear-gradient(45deg, #00d2ff, #3a7bd5); }
-button:hover { filter: brightness(1.2); }
-button:active { transform: scale(0.95); }
 
-/* 5. МОДАЛЬНЫЕ ОКНА */
+.pair-actions { display: flex; gap: 10px; margin-top: 5px; }
+.btn-action {
+    flex: 1; padding: 12px; border: none; border-radius: 12px;
+    font-weight: 600; cursor: pointer; transition: 0.2s; color: #fff;
+    font-size: 0.9rem;
+}
+.btn-hw { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.btn-le { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+.btn-action:active { transform: scale(0.96); }
+
+/* МОДАЛКА */
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 1000; transition: opacity 0.3s;
+    background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center; z-index: 3000;
+    opacity: 1; transition: opacity 0.3s;
 }
-.modal-content {
-    background: #1f1c2c; width: 90%; max-width: 500px;
-    padding: 25px; border-radius: 20px; border: 1px solid #444;
-    position: relative; max-height: 90vh; overflow-y: auto;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+.modal-overlay.hidden { opacity: 0; pointer-events: none; }
+
+.modal-card {
+    background: #1e1e2e; width: 90%; max-width: 500px;
+    border-radius: 24px; border: 1px solid var(--glass-border);
+    padding: 25px; position: relative;
+    max-height: 85vh; overflow-y: auto;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+    animation: zoomIn 0.3s ease;
 }
-.close-btn {
-    position: absolute; top: 15px; right: 20px; font-size: 2rem;
-    cursor: pointer; color: #aaa;
+.modal-card.small { max-width: 350px; }
+
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.modal-header h2 { font-size: 1.3rem; }
+.close-btn { font-size: 1.5rem; cursor: pointer; color: var(--text-muted); }
+
+.modal-body { line-height: 1.6; color: #e2e8f0; font-size: 1rem; }
+.modal-body a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(14, 165, 233, 0.3); word-break: break-all; }
+
+/* ФОРМЫ */
+.modern-form { display: flex; flex-direction: column; gap: 15px; }
+.form-row { display: flex; align-items: center; gap: 10px; }
+input {
+    width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border);
+    padding: 12px; border-radius: 12px; color: #fff; font-size: 1rem;
+}
+input:focus { border-color: var(--primary); }
+.btn-primary {
+    background: var(--primary); color: white; border: none; padding: 14px;
+    border-radius: 12px; font-weight: 700; cursor: pointer; font-size: 1rem;
 }
 
-.gallery-view {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 10px; margin-top: 15px;
-}
-#gallery-img {
-    max-height: 50vh; max-width: 100%; object-fit: contain;
-    border-radius: 8px; border: 1px solid #333;
-}
-.nav-btn {
-    background: rgba(255,255,255,0.1); width: 40px; height: 40px;
-    border-radius: 50%; color: white; border: none; cursor: pointer; flex-shrink: 0;
-}
-.nav-btn:hover { background: #00d2ff; color: #000; }
-.gallery-counter { text-align: center; color: #777; margin-top: 10px; font-size: 0.8rem; }
+/* ГАЛЕРЕЯ */
+.gallery-viewer { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; gap: 10px; }
+.image-wrapper { position: relative; display: inline-block; max-height: 50vh; max-width: 100%; }
+#gallery-img { width: 100%; height: 100%; max-height: 50vh; border-radius: 12px; object-fit: contain; }
 
-.input-group { margin-bottom: 15px; }
-.input-group label { display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem; }
-.input-group input {
-    width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444;
-    background: #2a2a40; color: #fff; font-family: 'Montserrat', sans-serif;
+.photo-actions {
+    position: absolute; bottom: 10px; right: 10px;
+    display: flex; gap: 5px; background: rgba(0,0,0,0.6); padding: 5px; border-radius: 20px;
+    backdrop-filter: blur(5px);
 }
-
-/* 6. КНОПКА АДМИНА */
-.admin-floating-btn {
-    position: fixed; bottom: 20px; right: 20px;
-    width: 50px; height: 50px; border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #fff; font-size: 1.5rem; cursor: pointer;
-    display: flex; justify-content: center; align-items: center;
-    transition: 0.3s; z-index: 999;
+.photo-actions button {
+    background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;
+    width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
 }
-.admin-floating-btn:hover { opacity: 1; background: #dc3545; transform: rotate(90deg); }
+.photo-actions button:hover { background: rgba(255,255,255,0.2); }
+.photo-actions button.del:hover { background: var(--danger); }
 
-@media (min-width: 600px) {
-    .schedule-row { flex-direction: row; align-items: center; }
-    .time-col, .subject-col, .actions-col { flex: 1; }
-    .actions-col { justify-content: flex-end; }
-    button.btn-hw, button.btn-le { flex: none; width: 100px; }
-    .delete-pair-btn { right: -12px; top: -12px; background: #dc3545; color: white; }
-    .admin-controls { flex-direction: row; justify-content: center; }
+.gallery-nav {
+    background: rgba(255,255,255,0.1); border: none; color: white;
+    width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
 }
+.gallery-info { text-align: center; margin-top: 10px; color: var(--text-muted); font-size: 0.85rem; }
 
+/* FAB (Floating Action Button) - Настройки */
+.fab-settings {
+    position: fixed; bottom: 20px; right: 20px; width: 48px; height: 48px;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+    border-radius: 50%; color: var(--text-muted); font-size: 1.2rem;
+    cursor: pointer; backdrop-filter: blur(5px); z-index: 1000;
+    display: flex; align-items: center; justify-content: center; transition: 0.3s;
+}
+.fab-settings:hover { background: var(--primary); color: white; transform: rotate(90deg); }
+
+/* Утилиты */
+.hidden { display: none !important; }
+.empty-state { text-align: center; margin-top: 50px; color: var(--text-muted); }
+.empty-icon { font-size: 3rem; margin-bottom: 10px; opacity: 0.5; }
+
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
