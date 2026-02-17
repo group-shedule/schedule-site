@@ -12,7 +12,7 @@ let currentScheduleData = [];
 let currentLectureFiles = [];
 let currentImageIndex = 0;
 let changesLog = [];
-let currentPairIdForGallery = null; // Нужно для удаления/поворота
+let currentPairIdForGallery = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     const today = new Date().toLocaleDateString('en-CA'); 
@@ -86,8 +86,7 @@ function createPairCard(pair) {
     return div;
 }
 
-// --- УПРАВЛЕНИЕ ФОТО (УДАЛЕНИЕ / ПОВОРОТ) ---
-
+// --- ФОТО ---
 function openGallery(id) {
     const pair = currentScheduleData.find(p => p.id === id);
     if (!pair) return;
@@ -97,7 +96,6 @@ function openGallery(id) {
     
     document.getElementById('modal-title').innerText = "Материалы лекции";
     document.getElementById('modal-body').innerHTML = ''; 
-    
     const galleryControls = document.getElementById('gallery-controls');
     const photoActions = document.getElementById('photo-actions');
     const isAdmin = localStorage.getItem('isAdmin') === 'true';
@@ -107,8 +105,7 @@ function openGallery(id) {
         galleryControls.classList.add('hidden');
     } else {
         galleryControls.classList.remove('hidden');
-        if(isAdmin) photoActions.classList.remove('hidden'); 
-        else photoActions.classList.add('hidden');
+        if(isAdmin) photoActions.classList.remove('hidden'); else photoActions.classList.add('hidden');
         updateGalleryImage();
     }
     document.getElementById('modal').classList.remove('hidden');
@@ -118,28 +115,16 @@ async function deleteCurrentPhoto() {
     if(!confirm('Удалить это фото?')) return;
     const currentFile = currentLectureFiles[currentImageIndex];
     loader.classList.remove('hidden');
-    
     try {
         await fetch(`${API_URL}/delete-single-image`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ 
-                doc_id: currentPairIdForGallery, 
-                image_id: currentFile.id,
-                image_url: currentFile.url
-            })
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ doc_id: currentPairIdForGallery, image_id: currentFile.id, image_url: currentFile.url })
         });
-        
         currentLectureFiles.splice(currentImageIndex, 1);
         if (currentImageIndex >= currentLectureFiles.length) currentImageIndex = Math.max(0, currentLectureFiles.length - 1);
-        
         loadSchedule(datePicker.value);
-        
-        if (currentLectureFiles.length === 0) {
-            document.getElementById('modal').classList.add('hidden');
-        } else {
-            updateGalleryImage();
-        }
+        if (currentLectureFiles.length === 0) document.getElementById('modal').classList.add('hidden');
+        else updateGalleryImage();
     } catch(e) { alert('Ошибка'); }
     loader.classList.add('hidden');
 }
@@ -147,19 +132,12 @@ async function deleteCurrentPhoto() {
 async function rotateCurrentPhoto() {
     const currentFile = currentLectureFiles[currentImageIndex];
     loader.classList.remove('hidden');
-    
     try {
         const res = await fetch(`${API_URL}/rotate-image`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ 
-                doc_id: currentPairIdForGallery, 
-                image_url: currentFile.url,
-                image_id: currentFile.id
-            })
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ doc_id: currentPairIdForGallery, image_url: currentFile.url, image_id: currentFile.id })
         });
         const data = await res.json();
-        
         if (data.success) {
             currentLectureFiles[currentImageIndex].url = data.new_url;
             updateGalleryImage();
@@ -178,228 +156,93 @@ function updateGalleryImage() {
 function nextSlide() { if(currentImageIndex < currentLectureFiles.length-1) { currentImageIndex++; updateGalleryImage(); } }
 function prevSlide() { if(currentImageIndex > 0) { currentImageIndex--; updateGalleryImage(); } }
 
-// --- ШАБЛОНЫ ---
+// --- ШАБЛОНЫ (НЕДЕЛЯ) ---
+function getMonday(d) {
+  d = new Date(d);
+  var day = d.getDay(), diff = d.getDate() - day + (day == 0 ? -6 : 1);
+  return new Date(d.setDate(diff));
+}
 
-async function saveCurrentDayAsTemplate() {
-    if (currentScheduleData.length === 0) { alert("День пустой, нечего сохранять."); return; }
-    const name = prompt("Название шаблона (например: 'Числитель Понедельник'):");
+async function saveCurrentWeekAsTemplate() {
+    const name = prompt("Название шаблона (например: 'Числитель'):");
     if (!name) return;
-    
+    loader.classList.remove('hidden');
+    const monday = getMonday(datePicker.value);
+    let weekPairs = [];
     try {
-        await fetch(`${API_URL}/save-template`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ name: name, pairs: currentScheduleData })
-        });
+        for (let i = 0; i < 6; i++) {
+            let tempDate = new Date(monday);
+            tempDate.setDate(monday.getDate() + i);
+            const dateStr = tempDate.toLocaleDateString('en-CA');
+            const res = await fetch(`${API_URL}/schedule?date=${dateStr}`);
+            const data = await res.json();
+            data.forEach(p => { p.day_index = i; weekPairs.push(p); });
+        }
+        if (weekPairs.length === 0) { alert("Неделя пустая."); loader.classList.add('hidden'); return; }
+        await fetch(`${API_URL}/save-template`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ name: name, pairs: weekPairs }) });
         alert('Шаблон сохранен!');
     } catch(e) { alert('Ошибка'); }
+    loader.classList.add('hidden');
 }
 
 async function openTemplateModal() {
     document.getElementById('template-modal').classList.remove('hidden');
     const list = document.getElementById('templates-list');
     list.innerHTML = 'Загрузка...';
-    
     try {
         const res = await fetch(`${API_URL}/templates`);
         const data = await res.json();
         list.innerHTML = '';
         if (data.length === 0) list.innerHTML = '<p style="color:#aaa;">Нет шаблонов</p>';
-        
         data.forEach(tmpl => {
             const div = document.createElement('div');
             div.className = 'template-item';
-            div.innerHTML = `
-                <span>${tmpl.name}</span>
-                <div>
-                    <button class="btn-load" onclick='applyTemplate(${JSON.stringify(tmpl.pairs)})'>Загрузить</button>
-                    <button class="btn-del-tmpl" onclick="deleteTemplate('${tmpl.id}')">🗑️</button>
-                </div>
-            `;
+            div.innerHTML = `<span>${tmpl.name}</span><div><button class="btn-load" onclick='applyTemplate(${JSON.stringify(tmpl.pairs)})'>Загрузить</button><button class="btn-del-tmpl" onclick="deleteTemplate('${tmpl.id}')">🗑️</button></div>`;
             list.appendChild(div);
         });
     } catch(e) { list.innerHTML = 'Ошибка'; }
 }
 
 async function applyTemplate(pairs) {
-    if(!confirm('Загрузить этот шаблон на ТЕКУЩИЙ день? (Существующие пары добавятся)')) return;
+    if(!confirm('Загрузить шаблон на эту неделю?')) return;
     closeTemplateModal();
     loader.classList.remove('hidden');
-    
-    const date = datePicker.value;
-    for (let p of pairs) {
-        await fetch(`${API_URL}/add-pair`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ 
-                date: date, 
-                time_start: p.time_start, 
-                time_end: p.time_end, 
-                subject: p.subject, 
-                teacher: p.teacher 
-            })
-        });
-    }
-    loadSchedule(date);
+    const monday = getMonday(datePicker.value);
+    try {
+        for (let p of pairs) {
+            let targetDate = new Date(monday);
+            targetDate.setDate(monday.getDate() + p.day_index);
+            await fetch(`${API_URL}/add-pair`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ date: targetDate.toLocaleDateString('en-CA'), time_start: p.time_start, time_end: p.time_end, subject: p.subject, teacher: p.teacher })
+            });
+        }
+        loadSchedule(datePicker.value);
+        alert("Загружено!");
+    } catch(e) { alert("Ошибка"); }
     loader.classList.add('hidden');
 }
 
 async function deleteTemplate(id) {
-    if(!confirm('Удалить шаблон?')) return;
+    if(!confirm('Удалить?')) return;
     await fetch(`${API_URL}/delete-template`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id}) });
     openTemplateModal(); 
 }
-
 function closeTemplateModal() { document.getElementById('template-modal').classList.add('hidden'); }
 
-// --- СТАНДАРТНЫЕ ФУНКЦИИ ---
-
+// --- СТАНДАРТНЫЕ ---
 function openAddModal() { document.getElementById('add-modal').classList.remove('hidden'); }
 function closeAddModal() { document.getElementById('add-modal').classList.add('hidden'); }
 function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-
-async function submitNewPair(e) {
-    e.preventDefault();
-    const start = document.getElementById('new-start').value;
-    const end = document.getElementById('new-end').value;
-    const subject = document.getElementById('new-subject').value;
-    const teacher = document.getElementById('new-teacher').value;
-    const date = datePicker.value;
-
-    try {
-        await fetch(`${API_URL}/add-pair`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ date, time_start: start, time_end: end, subject, teacher })
-        });
-        closeAddModal();
-        loadSchedule(date); 
-    } catch(e) { alert('Ошибка создания'); }
-}
-
-async function deletePair(id) {
-    if(!confirm('Точно удалить пару?')) return;
-    try {
-        await fetch(`${API_URL}/delete-pair`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ id })
-        });
-        loadSchedule(datePicker.value);
-    } catch(e) { alert('Ошибка удаления'); }
-}
-
-function openHomework(id) {
-    const pair = currentScheduleData.find(p => p.id === id);
-    if (!pair) return;
-    const text = pair.homework;
-    document.getElementById('modal-title').innerText = "Домашнее задание";
-    document.getElementById('gallery-controls').classList.add('hidden'); 
-    const modalBody = document.getElementById('modal-body');
-    const isAdmin = localStorage.getItem('isAdmin') === 'true';
-    if (isAdmin) {
-        modalBody.innerHTML = `
-            <textarea id="hw-edit-area" style="width:100%; height:150px; background:rgba(0,0,0,0.3); color:#fff; padding:10px; border:1px solid #555; border-radius:10px;">${text || ''}</textarea>
-            <button onclick="saveHomework('${id}', '${pair.subject}')" style="margin-top:10px; background:#10b981; color:white; padding:10px; border:none; border-radius:10px; cursor:pointer; width:100%;">Сохранить</button>
-            <p style="font-size:0.8rem; color:#aaa; margin-top:5px;">💡 Ссылки (http/https) станут кликабельными.</p>
-        `;
-    } else {
-        modalBody.innerHTML = formatTextWithLinks(text);
-    }
-    document.getElementById('modal').classList.remove('hidden');
-}
-
-async function saveHomework(id, subjectName) {
-    const text = document.getElementById('hw-edit-area').value;
-    await fetch(`${API_URL}/update-text`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({id, homework: text})
-    });
-    alert('ДЗ сохранено!');
-    addToLog(`Добавлено ДЗ: ${subjectName} (${formatDate(datePicker.value)})`);
-    closeModal();
-    loadSchedule(datePicker.value);
-}
-
-async function updateText(id, field, value) {
-    await fetch(`${API_URL}/update-text`, {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({id, [field]: value})
-    });
-}
-
-async function uploadPhotos(id, subjectName, files) {
-    const formData = new FormData();
-    formData.append('id', id);
-    for(let i=0; i<files.length; i++) {
-        if(files[i].size > 10*1024*1024) { alert(`Файл ${files[i].name} слишком большой!`); return; }
-        formData.append('photos', files[i]);
-    }
-    
-    loader.classList.remove('hidden');
-    try {
-        const res = await fetch(`${API_URL}/upload-lecture`, { method: 'POST', body: formData });
-        const data = await res.json();
-        loader.classList.add('hidden');
-        if (data.success) {
-            addToLog(`Добавлено фото лекций: ${subjectName} (${formatDate(datePicker.value)})`);
-            loadSchedule(datePicker.value);
-        } else {
-            alert('Ошибка сервера: ' + data.error);
-        }
-    } catch (e) { loader.classList.add('hidden'); alert('Ошибка сети'); }
-}
-
-function addToLog(message) { changesLog.push(message); updateNotifyButton(); }
-function updateNotifyButton() {
-    const btn = document.getElementById('notify-btn');
-    if (btn) btn.innerText = `📢 Уведомить (${changesLog.length})`;
-}
-function formatDate(isoDate) {
-    const d = new Date(isoDate);
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${day}.${month}.${year}`;
-}
-async function sendNotification() {
-    if (changesLog.length === 0) { alert("Нет изменений."); return; }
-    const uniqueLog = [...new Set(changesLog)];
-    const message = uniqueLog.join('\n'); 
-    if (!confirm("Отправить уведомление?\n\n" + message)) return;
-    try {
-        const res = await fetch(`${API_URL}/notify`, {
-            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message: message })
-        });
-        const data = await res.json();
-        if (data.success) { alert("Отправлено!"); changesLog = []; updateNotifyButton(); } 
-        else { alert("Ошибка: " + JSON.stringify(data)); }
-    } catch (e) { alert("Ошибка сети"); }
-}
-
-function checkAdminMode() {
-    if(localStorage.getItem('isAdmin') === 'true') {
-        const btn = document.getElementById('admin-login-btn');
-        btn.style.background = '#ef4444';
-        btn.style.opacity = '1';
-        document.getElementById('admin-panel').classList.remove('hidden');
-    }
-}
-document.getElementById('admin-login-btn').addEventListener('click', async () => {
-    if (localStorage.getItem('isAdmin') === 'true') {
-        if(confirm('Выйти?')) { localStorage.removeItem('isAdmin'); location.reload(); }
-    } else {
-        const l = prompt('Логин:'); const p = prompt('Пароль:');
-        if (!l || !p) return;
-        try {
-            const res = await fetch(`${API_URL}/login`, {
-                method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({login:l, password:p})
-            });
-            const d = await res.json();
-            if(d.success) { localStorage.setItem('isAdmin','true'); location.reload(); } 
-            else { alert('Ошибка входа'); }
-        } catch (e) { alert('Ошибка сети'); }
-    }
-});
+async function submitNewPair(e) { e.preventDefault(); /* ... */ const start = document.getElementById('new-start').value; const end = document.getElementById('new-end').value; const subject = document.getElementById('new-subject').value; const teacher = document.getElementById('new-teacher').value; try { await fetch(`${API_URL}/add-pair`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ date: datePicker.value, time_start: start, time_end: end, subject, teacher }) }); closeAddModal(); loadSchedule(datePicker.value); } catch(e){} }
+async function deletePair(id) { if(!confirm('Удалить?')) return; try { await fetch(`${API_URL}/delete-pair`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id }) }); loadSchedule(datePicker.value); } catch(e){} }
+function openHomework(id) { const pair = currentScheduleData.find(p => p.id === id); if (!pair) return; document.getElementById('modal-title').innerText = "Домашнее задание"; document.getElementById('gallery-controls').classList.add('hidden'); const modalBody = document.getElementById('modal-body'); if (localStorage.getItem('isAdmin') === 'true') { modalBody.innerHTML = `<textarea id="hw-edit-area" style="width:100%; height:150px; background:rgba(0,0,0,0.3); color:#fff; padding:10px; border:1px solid #555; border-radius:10px;">${pair.homework || ''}</textarea><button onclick="saveHomework('${id}', '${pair.subject}')" style="margin-top:10px; background:#10b981; color:white; padding:10px; border:none; border-radius:10px; cursor:pointer; width:100%;">Сохранить</button>`; } else { modalBody.innerHTML = formatTextWithLinks(pair.homework); } document.getElementById('modal').classList.remove('hidden'); }
+async function saveHomework(id, subjectName) { const text = document.getElementById('hw-edit-area').value; await fetch(`${API_URL}/update-text`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, homework: text}) }); alert('Сохранено'); addToLog(`Добавлено ДЗ: ${subjectName} (${formatDate(datePicker.value)})`); closeModal(); loadSchedule(datePicker.value); }
+async function updateText(id, f, v) { await fetch(`${API_URL}/update-text`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, [f]: v}) }); }
+async function uploadPhotos(id, subjectName, files) { const formData = new FormData(); formData.append('id', id); for(let i=0; i<files.length; i++) { if(files[i].size > 10*1024*1024) { alert('Файл большой!'); return; } formData.append('photos', files[i]); } loader.classList.remove('hidden'); try { const res = await fetch(`${API_URL}/upload-lecture`, { method: 'POST', body: formData }); const data = await res.json(); if(data.success) { addToLog(`Фото лекций: ${subjectName} (${formatDate(datePicker.value)})`); loadSchedule(datePicker.value); } else alert(data.error); } catch(e){ alert('Ошибка'); } loader.classList.add('hidden'); }
+function addToLog(m) { changesLog.push(m); updateNotifyButton(); }
+function updateNotifyButton() { const btn = document.getElementById('notify-btn'); if(btn) btn.innerText = `📢 Уведомить (${changesLog.length})`; }
+function formatDate(isoDate) { const d = new Date(isoDate); return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`; }
+async function sendNotification() { if(!changesLog.length) return; const msg = [...new Set(changesLog)].join('\n'); if(!confirm("Отправить?\n"+msg)) return; try { const res = await fetch(`${API_URL}/notify`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message: msg }) }); const d = await res.json(); if(d.success) { alert("Отправлено!"); changesLog=[]; updateNotifyButton(); } } catch(e){} }
+function checkAdminMode() { if(localStorage.getItem('isAdmin')==='true') { document.getElementById('admin-login-btn').style.background='#ef4444'; document.getElementById('admin-panel').classList.remove('hidden'); } }
+document.getElementById('admin-login-btn').addEventListener('click', async () => { if(localStorage.getItem('isAdmin')==='true'){ if(confirm('Выйти?')){ localStorage.removeItem('isAdmin'); location.reload(); }} else { const l=prompt('Логин'); const p=prompt('Пароль'); if(l&&p){ const r=await fetch(`${API_URL}/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:l,password:p})}); const d=await r.json(); if(d.success){ localStorage.setItem('isAdmin','true'); location.reload(); } else alert('Ошибка'); } } });
