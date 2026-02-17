@@ -3,141 +3,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Расписание группы</title>
-    
-    <!-- FAVICON (Иконка сайта) -->
+    <title>12ЭПС | Расписание</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
-    
     <link rel="stylesheet" href="style.css">
 
-        <!-- Подключение OneSignal (Уведомления) -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(function(OneSignal) {
         OneSignal.init({
-          appId: "b4a0253c-5239-4270-834e-1479ecbdcfe8", // <-- ТВОИ ЦИФРЫ
-          
-          // ВКЛЮЧАЕМ КОЛОКОЛЬЧИК (Самый надежный способ)
-          notifyButton: {
-            enable: true, 
-            showCredit: false,
-            text: {
-                'tip.state.unsubscribed': 'Подпишись на уведомления!',
-                'tip.state.subscribed': 'Вы подписаны на обновления',
-                'tip.state.blocked': 'Вы заблокировали уведомления',
-                'message.action.subscribed': "Спасибо за подписку!",
-                'message.action.resubscribed': "Вы снова подписаны",
-                'message.action.unsubscribed': "Вы отписались",
-                'dialog.main.title': 'Настройки уведомлений',
-                'dialog.main.button.subscribe': 'ПОДПИСАТЬСЯ',
-                'dialog.main.button.unsubscribe': 'ОТПИСАТЬСЯ',
-                'dialog.blocked.title': 'Разблокировать уведомления',
-                'dialog.blocked.message': 'Следуйте инструкциям, чтобы разрешить уведомления'
-            }
-          },
-          
-          // Разрешаем работу на локалке (на всякий случай)
-          allowLocalhostAsSecureOrigin: true,
+          appId: "ВСТАВЬ_СЮДА_СВОЙ_APP_ID", // <-- ВСТАВЬ ID
+          notifyButton: { enable: true, size: 'medium', theme: 'default', position: 'bottom-right' }
         });
-        
-        // НАСИЛЬНО ВЫЗЫВАЕМ ОКНО ПОДПИСКИ ПРИ ЗАГРУЗКЕ
-        OneSignal.Slidedown.promptPush();
       });
     </script>
 </head>
 <body>
 
-    <!-- Уведомление -->
-    <div id="loader" class="server-toast">
-        <div class="spinner-small"></div>
-        <span>Связь с базой данных...</span>
+    <div id="loader" class="loader-overlay">
+        <div class="loader-content">
+            <div class="spinner"></div>
+            <p>Загрузка данных...</p>
+        </div>
     </div>
 
-    <header>
-        <h1>Расписание</h1>
-        
-        <!-- Календарь -->
-        <div class="date-controls">
-            <button onclick="changeDate(-1)">❮</button>
-            <input type="date" id="date-picker">
-            <button onclick="changeDate(1)">❯</button>
-        </div>
-        <p id="human-date" class="current-date">...</p>
-        
-        <!-- ПАНЕЛЬ АДМИНА (Скрыта по умолчанию) -->
-        <div class="admin-controls hidden" id="admin-panel-header">
-            <button id="add-pair-btn" class="btn-add-pair" onclick="openAddModal()">+ Добавить пару</button>
-            <button id="notify-btn" class="btn-notify" onclick="sendNotification()">📢 Уведомить (0)</button>
-        </div>
-    </header>
-
-    <main>
-        <div class="table-container">
-            <div id="schedule-list">
-                <!-- Сюда вставляются пары -->
+    <div class="app-container">
+        <header>
+            <div class="logo">12EPS</div>
+            <div class="date-widget">
+                <button class="nav-arrow" onclick="changeDate(-1)">❮</button>
+                <div class="date-display">
+                    <span id="human-day">...</span>
+                    <input type="date" id="date-picker">
+                    <small id="human-full-date">...</small>
+                </div>
+                <button class="nav-arrow" onclick="changeDate(1)">❯</button>
             </div>
-            <p id="empty-msg" style="text-align:center; color:#777; margin-top:20px; display:none;">
-                На этот день пар нет (или это выходной).
-            </p>
-        </div>
-    </main>
+        </header>
 
-    <!-- Модалка: Просмотр -->
+        <main>
+            <!-- АДМИН ПАНЕЛЬ -->
+            <div id="admin-panel" class="admin-panel hidden">
+                <div class="admin-header">Панель управления</div>
+                
+                <!-- Кнопки действий -->
+                <div class="admin-actions">
+                    <button onclick="openAddModal()" class="btn-icon">➕ Пару</button>
+                    <button id="notify-btn" onclick="sendNotification()" class="btn-icon alert">📢 Уведомить</button>
+                </div>
+
+                <!-- Управление шаблонами -->
+                <div class="template-controls">
+                    <div class="template-row">
+                        <button onclick="saveCurrentDayAsTemplate()" class="btn-small">💾 Сохранить день как шаблон</button>
+                        <button onclick="openTemplateModal()" class="btn-small">📂 Загрузить шаблон</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="schedule-list" class="schedule-grid"></div>
+
+            <div id="empty-msg" class="empty-state hidden">
+                <div class="empty-icon">🏖️</div>
+                <p>На этот день пар нет</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- МОДАЛКА ПРОСМОТРА / ДЗ -->
     <div id="modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeModal()">&times;</span>
-            <h2 id="modal-title">Заголовок</h2>
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 id="modal-title">Заголовок</h2>
+                <span class="close-btn" onclick="closeModal()">&times;</span>
+            </div>
             
-            <div id="modal-body" style="margin-bottom: 15px; line-height: 1.5;"></div>
+            <div id="modal-body" class="modal-body"></div>
 
             <!-- Галерея -->
-            <div id="gallery-controls" class="hidden">
-                <div class="gallery-view">
-                    <button class="nav-btn prev" onclick="prevSlide()">❮</button>
-                    <img id="gallery-img" src="" alt="Лекция">
-                    <button class="nav-btn next" onclick="nextSlide()">❯</button>
+            <div id="gallery-controls" class="gallery-container hidden">
+                <div class="gallery-viewer">
+                    <button class="gallery-nav prev" onclick="prevSlide()">❮</button>
+                    <div class="image-wrapper">
+                        <img id="gallery-img" src="" alt="Лекция">
+                        <!-- Кнопки управления фото (Только для Админа) -->
+                        <div id="photo-actions" class="photo-actions hidden">
+                            <button onclick="rotateCurrentPhoto()" title="Повернуть">↻</button>
+                            <button onclick="deleteCurrentPhoto()" title="Удалить" class="del">🗑️</button>
+                        </div>
+                    </div>
+                    <button class="gallery-nav next" onclick="nextSlide()">❯</button>
                 </div>
-                <div class="gallery-counter">Стр <span id="current-page">1</span> из <span id="total-pages">1</span></div>
+                <div class="gallery-info">Слайд <span id="current-page">1</span> / <span id="total-pages">1</span></div>
             </div>
         </div>
     </div>
 
-    <!-- Модалка: Добавление -->
+    <!-- МОДАЛКА ВЫБОРА ШАБЛОНА -->
+    <div id="template-modal" class="modal-overlay hidden">
+        <div class="modal-card small">
+            <div class="modal-header">
+                <h2>Выберите шаблон</h2>
+                <span class="close-btn" onclick="closeTemplateModal()">&times;</span>
+            </div>
+            <div id="templates-list" class="templates-list">
+                <p>Загрузка...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- МОДАЛКА ДОБАВЛЕНИЯ -->
     <div id="add-modal" class="modal-overlay hidden">
-        <div class="modal-content" style="max-width: 400px;">
-            <span class="close-btn" onclick="closeAddModal()">&times;</span>
-            <h2 style="margin-bottom: 15px;">Новая пара</h2>
-            <form id="add-form" onsubmit="submitNewPair(event)">
-                <div class="input-group">
-                    <label>Время начала:</label>
+        <div class="modal-card small">
+            <div class="modal-header">
+                <h2>Новая пара</h2>
+                <span class="close-btn" onclick="closeAddModal()">&times;</span>
+            </div>
+            <form id="add-form" onsubmit="submitNewPair(event)" class="modern-form">
+                <div class="form-row">
                     <input type="time" id="new-start" required>
-                </div>
-                <div class="input-group">
-                    <label>Время конца:</label>
+                    <span>—</span>
                     <input type="time" id="new-end" required>
                 </div>
-                <div class="input-group">
-                    <label>Предмет:</label>
-                    <input type="text" id="new-subject" placeholder="Например: Математика" required>
-                </div>
-                <div class="input-group">
-                    <label>Преподаватель:</label>
-                    <input type="text" id="new-teacher" placeholder="Фамилия И.О.">
-                </div>
-                <button type="submit" class="btn-add-pair" style="width:100%; border-radius: 10px;">Создать</button>
+                <input type="text" id="new-subject" placeholder="Предмет" required>
+                <input type="text" id="new-teacher" placeholder="Преподаватель">
+                <button type="submit" class="btn-primary full-width">Создать</button>
             </form>
         </div>
     </div>
 
-    <!-- Шестеренка -->
-    <button id="admin-login-btn" class="admin-floating-btn" title="Админка">⚙️</button>
+    <button id="admin-login-btn" class="fab-settings">⚙️</button>
 
-    <script src="script.js?v=888"></script>
+    <script src="script.js?v=999"></script>
 </body>
 </html>
-
-
-
-
-
