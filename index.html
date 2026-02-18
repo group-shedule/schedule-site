@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="robots" content="noindex, nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>12ЭПС | Расписание</title>
+    <title>12EPS | Расписание</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="stylesheet" href="style.css">
 
+    <!-- Compressor.js (Сжатие фото перед загрузкой) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.2.1/compressor.min.js"></script>
+
+    <!-- OneSignal -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -24,13 +28,13 @@
     <div id="loader" class="loader-overlay">
         <div class="loader-content">
             <div class="spinner"></div>
-            <p>Загрузка данных...</p>
+            <p>Обработка и загрузка...</p>
         </div>
     </div>
 
     <div class="app-container">
         <header>
-            <div class="logo">12ЭПС</div>
+            <div class="logo">12EPS</div>
             <div class="date-widget">
                 <button class="nav-arrow" onclick="changeDate(-1)">❮</button>
                 <div class="date-display">
@@ -43,7 +47,6 @@
         </header>
 
         <main>
-            <!-- АДМИН ПАНЕЛЬ -->
             <div id="admin-panel" class="admin-panel hidden">
                 <div class="admin-header">Панель управления</div>
                 <div class="admin-actions">
@@ -52,7 +55,6 @@
                 </div>
                 <div class="template-controls">
                     <div class="template-row">
-                        <!-- КНОПКА СОХРАНЕНИЯ НЕДЕЛИ -->
                         <button onclick="saveCurrentWeekAsTemplate()" class="btn-small">💾 Сохранить НЕДЕЛЮ как шаблон</button>
                         <button onclick="openTemplateModal()" class="btn-small">📂 Загрузить шаблон</button>
                     </div>
@@ -115,9 +117,6 @@
     </div>
 
     <button id="admin-login-btn" class="fab-settings">⚙️</button>
-    <script src="script.js?v=4444"></script>
+    <script src="script.js?v=5555"></script>
 </body>
 </html>
-
-
-
